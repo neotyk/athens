@@ -30,7 +30,12 @@
                  [garden "1.3.10"]
                  [stylefy "2.2.0"]
                  [tick "0.4.26-alpha"]
-                 [com.rpl/specter "1.1.3"]]
+                 [com.rpl/specter "1.1.3"]
+
+                 ;; backend
+                 [http-kit "2.5.3"]
+                 [mount "0.1.16"]
+                 [compojure "1.6.2"]]
 
   :plugins [[lein-shell "0.5.0"]]
 
@@ -38,8 +43,9 @@
 
   :source-paths ["src/clj" "src/cljs" "src/cljc" "src/js"]
 
-  :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
+  :main athens.server
 
+  :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
 
   :shell {:commands {"open" {:windows ["cmd" "/c" "start"]
                              :macosx  "open"
@@ -47,8 +53,8 @@
 
   :aliases {"dev"          ["with-profile" "dev" "do"
                             ["run" "-m" "shadow.cljs.devtools.cli" "watch" "main" "renderer"]]
-            "compile"        ["with-profile" "dev" "do"
-                              ["run" "-m" "shadow.cljs.devtools.cli" "compile" "main" "renderer"]]
+            "compile"      ["with-profile" "dev" "do"
+                            ["run" "-m" "shadow.cljs.devtools.cli" "compile" "main" "renderer"]]
             "devcards"     ["with-profile" "dev" "do"
                             ["run" "-m" "shadow.cljs.devtools.cli" "watch" "devcards"]]
             "prod"         ["with-profile" "prod" "do"
@@ -70,8 +76,11 @@
                    [day8.re-frame/tracing "0.5.3"]
                    [cider/cider-nrepl "0.25.1"]]
 
-    :source-paths ["dev"]}
+    :source-paths ["dev/cljs" "dev/clj"]}
    :prod
-   {:dependencies [[day8.re-frame/tracing-stubs "0.5.3"]]}}
-
+   {:dependencies [[day8.re-frame/tracing-stubs "0.5.3"]]}
+   :repl {:plugins      [[cider/cider-nrepl "0.25.1"]]
+          :source-paths ["dev/clj"]
+          :repl-options {:init-ns dev
+                         :init    (dev/go)}}}
   :prep-tasks [])
