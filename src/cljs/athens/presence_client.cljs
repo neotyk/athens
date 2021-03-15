@@ -1,4 +1,5 @@
 (ns athens.presence-client
+  "Athens Presence Client"
   (:require
     [re-frame.core :as rf]))
 
@@ -8,24 +9,62 @@
 
 (defn client-message-handler
   [event]
-  (let [data (js->clj (js/JSON.parse (.-data event))
-                      :keywordize-keys true)]
+  (let [data (-> event
+                 .-data
+                 js/JSON.parse
+                 (js->clj :keywordize-keys true))]
     (js/console.log "WS Client <-:" (pr-str data))
     (when (get-in data [:presence :editing])
       (rf/dispatch [:presence/new-editor data]))))
 
 
-(def ws
-  (when ws-url
-    (doto (js/WebSocket. ws-url)
-      (.addEventListener "message" client-message-handler))))
+(declare ws)
+(declare connect-to-presence)
+
+
+(defn client-open-handler
+  [event]
+  (js/console.log "WS Client Connected:" event)
+  (.send (.-target event) (-> {:username @(rf/subscribe [:user])}
+                              clj->js
+                              js/JSON.stringify)))
+
+
+(defn client-close-handler
+  [event]
+  (js/console.log "WS Client Disconnected:" event)
+  (reset! ws nil)
+  (js/setTimeout #(reset! ws (connect-to-presence ws-url))
+                 3000))
+
+
+(defn connect-to-presence
+  [url]
+  (js/console.log "WS Client Connecting:" url)
+  (when url
+    (doto (js/WebSocket. url)
+      (.addEventListener "message" client-message-handler)
+      (.addEventListener "close" client-close-handler)
+      (.addEventListener "open" client-open-handler))))
+
+
+(def ws (atom (connect-to-presence ws-url)))
 
 
 (defn publish-editing
   [username uid]
-  (js/console.log "publish-editing" (pr-str {:username username
-                                             :uid uid}))
-  (when (and ws
-             (= (.-OPEN ws) (.-readyState ws)))
-    (.send ws (js/JSON.stringify (clj->js {:presence {:editor  username
-                                                      :editing uid}})))))
+  (let [conn     @ws
+        pub-edit {:editing uid}]
+    (js/console.log "publish-editing" uid conn)
+    (if (and conn
+             (= (.-OPEN js/WebSocket) (.-readyState conn)))
+
+      (do
+        (js/console.log "sending")
+        (.send conn (-> pub-edit
+                        clj->js
+                        js/JSON.stringify)))
+
+      (js/console.warn "Can't publish, WS Closed."
+                       (.-readyState conn)
+                       (.-readyState @ws)))))

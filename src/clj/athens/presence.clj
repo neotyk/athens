@@ -32,28 +32,43 @@
 
 (defn receive-handler
   [ch msg]
-  (println ch "msg:" msg)
-  (let [data (json/read-json msg)]
-    (println "decoded msg:" (pr-str data))
-    (when (:presence data)
-      (let [data (merge data {:time (now)
-                              :id   (next-id)})]
-        (dosync
-          (let [all-presence* (conj @all-presence data)
-                total         (count all-presence*)]
-            (if (> total 100) ;; NOTE: better way of cleanup, time based maybe? hold presence for 1 minutes?
-              (ref-set all-presence (vec (drop (- total 100) all-presence*)))
-              (ref-set all-presence all-presence*))))))
-    ;; NOTE naive implementation, better use `mult`, `tap` & `untap`
-    (doseq [client (keys @clients)]
-      ;; send all, client will filter them
-      (server/send! client (json/json-str (last @all-presence))))))
+  (let [ch-username (get @clients ch)]
+    (println ch "WS Server <-" ch-username ":" msg)
+    (let [data (json/read-json msg)]
+      (println "decoded msg:" (pr-str data))
+
+      ;; presence
+      (when-let [uid (:editing data)]
+        (let [data {:presence {:time     (now)
+                               :id       (next-id)
+                               :editing  uid
+                               :username ch-username}}]
+          (dosync
+            (let [all-presence* (conj @all-presence data)
+                  total         (count all-presence*)]
+             ;; NOTE: better way of cleanup, time based maybe? hold presence for 1 minutes?
+              (if (> total 100)
+                (ref-set all-presence (vec (drop (- total 100) all-presence*)))
+                (ref-set all-presence all-presence*)))))
+        (doseq [client (keys @clients)]
+          (server/send! client (json/json-str (last @all-presence)))))
+
+      ;; hello
+      (when-let [username (:username data)]
+        (println "New Client:" username)
+        (swap! clients assoc ch username)))))
 
 
 (defn close-handler
   [ch status]
-  (swap! clients dissoc ch)
-  (println ch "closed, status" status))
+  (let [ch-username         (get @clients ch)
+        presence-disconnect {:presence {:username   ch-username
+                                        :disconnect true}}]
+    (swap! clients dissoc ch)
+    (println ch ch-username "closed, status" status)
+    (when ch-username
+      (doseq [client (keys @clients)]
+        (server/send! client (json/json-str presence-disconnect))))))
 
 
 (defn presence-handler
