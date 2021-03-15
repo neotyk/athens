@@ -8,10 +8,9 @@
 
 (defn client-message-handler
   [event]
-  (js/console.debug "WS Client <-:" (pr-str event))
   (let [data (js->clj (js/JSON.parse (.-data event))
                       :keywordize-keys true)]
-    (js/console.log (pr-str data))
+    (js/console.log "WS Client <-:" (pr-str data))
     (when (get-in data [:presence :editing])
       (rf/dispatch [:presence/new-editor data]))))
 
