@@ -47,7 +47,7 @@
     ;; NOTE naive implementation, better use `mult`, `tap` & `untap`
     (doseq [client (keys @clients)]
       ;; send all, client will filter them
-      (server/send! client (json/json-str data)))))
+      (server/send! client (json/json-str (last @all-presence))))))
 
 
 (defn close-handler

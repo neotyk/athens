@@ -151,8 +151,10 @@
 (reg-event-fx
   :editing/uid
   (fn [{:keys [db]} [_ uid index]]
-    {:db            (assoc db :editing/uid uid)
-     :editing/focus [uid index]}))
+    (js/console.log "editing/uid" (pr-str uid))
+    {:db               (assoc db :editing/uid uid)
+     :editing/focus    [uid index]
+     :presence/editing [(:user db) uid]}))
 
 
 (reg-event-fx
@@ -1562,3 +1564,11 @@
                                       (let [new-str (link-unlinked-reference string title)]
                                         {:db/id [:block/uid uid] :block/string new-str}))))]
       {:dispatch [:transact new-str-tx-data]})))
+
+
+(reg-event-fx
+ :presence/new-editor
+ (fn [db [_ data]]
+   (js/console.log "presence/new-editor:" (pr-str data))
+   ;; TODO Store presence in DB and present in view
+   {}))

@@ -1,6 +1,7 @@
 (ns athens.effects
   (:require
     [athens.db :as db]
+    [athens.presence-client :as presence]
     [athens.util :as util]
     [athens.walk :as walk]
     [cljs-http.client :as http]
@@ -352,3 +353,9 @@
   :alert/js!
   (fn [message]
     (js/alert message)))
+
+
+(reg-fx
+  :presence/editing
+  (fn [[username uid]]
+    (presence/publish-editing username uid)))
