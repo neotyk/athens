@@ -33,6 +33,10 @@
 (defn client-close-handler
   [event]
   (js/console.log "WS Client Disconnected:" event)
+  (doto (.-target event)
+    (.removeEventListener "message" client-message-handler)
+    (.removeEventListener "close" client-close-handler)
+    (.removeEventListener "open" client-open-handler))
   (reset! ws nil)
   (js/setTimeout #(reset! ws (connect-to-presence ws-url))
                  3000))
