@@ -22,6 +22,12 @@
                   [:local-storage/set-theme]]}))
 
 
+(reg-event-fx
+  :boot/common
+  (fn [_ _]
+    {:dispatch [:local-storage/set-user]}))
+
+
 (reg-event-db
   :init-rfdb
   (fn [_ _]
@@ -154,7 +160,7 @@
     (js/console.log "editing/uid" (pr-str uid))
     {:db               (assoc db :editing/uid uid)
      :editing/focus    [uid index]
-     :presence/editing [(:user db) uid]}))
+     :presence/editing uid}))
 
 
 (reg-event-fx
@@ -1572,3 +1578,21 @@
    (js/console.log "presence/new-editor:" (pr-str data))
    ;; TODO Store presence in DB and present in view
    {}))
+
+;; TODO: handle presence/new-view
+
+;; TODO: handle client going away (clenup edits and views)
+
+(reg-event-fx
+ :local-storage/set-user
+ [(inject-cofx :local-storage "user/name")]
+ (fn [{:keys [local-storage]} _]
+   {:dispatch [:user/set local-storage]}))
+
+
+(reg-event-fx
+ :user/set
+ (fn [db [_ new-name]]
+   (js/console.debug "user/set" (pr-str new-name))
+   {:db             (assoc db :user new-name)
+    :presence/hello new-name}))

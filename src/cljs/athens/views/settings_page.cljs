@@ -7,6 +7,7 @@
     [cljs-http.client :as http]
     [cljs.core.async :refer [<!]]
     [goog.functions :as goog-functions]
+    [re-frame.core :as rf]
     [reagent.core :as r])
   (:require-macros
     [cljs.core.async.macros :refer [go]]))
@@ -93,7 +94,8 @@
         authed?             (r/atom (= (js/localStorage.getItem "auth/authed?") "true"))
         email               (r/atom (init-email))
         sending-request     (r/atom false)
-        debounce-save-time! (r/atom (js/Number (js/localStorage.getItem "debounce-save-time")))]
+        debounce-save-time! (r/atom (js/Number (js/localStorage.getItem "debounce-save-time")))
+        user-sub            (rf/subscribe [:user])]
 
     (fn []
       (let [submit-disabled     (or @sending-request @authed?)]
@@ -161,5 +163,16 @@
            (case @debounce-save-time!
              0 [:span (str "Athens will save and create a local backup after each edit.")]
              1 [:span (str "Athens will save and create a local backup " @debounce-save-time! " second after your last edit.")]
-             [:span (str "Athens will save and create a local backup " @debounce-save-time! " seconds after your last edit.")])]]]))))
+             [:span (str "Athens will save and create a local backup " @debounce-save-time! " seconds after your last edit.")])]]
+
+         [:div {:style {:margin "20px 0"}}
+          [:h5 "Your Name"]
+          [:div {:style {:display "flex" :justify-content "space-between"
+                         :margin  "10px 0"}}
+           [:input {:style     {:width "12em"}
+                    :value     @user-sub
+                    :on-change #(let [new-name (.. % -target -value)]
+                                  (rf/dispatch [:user/set new-name])
+                                  (js/localStorage.setItem "user/name" new-name))}]
+           "This name will be be displayed to other people in you org while using Athens"]]]))))
 

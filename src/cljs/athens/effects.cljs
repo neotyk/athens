@@ -356,6 +356,13 @@
 
 
 (reg-fx
+  :presence/hello
+  (fn [new-name]
+    (presence/hello! new-name)))
+
+
+(reg-fx
   :presence/editing
-  (fn [[username uid]]
-    (presence/publish-editing username uid)))
+  (fn [uid]
+    (presence/publish-editing! uid)))
+

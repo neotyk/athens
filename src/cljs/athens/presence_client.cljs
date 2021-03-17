@@ -20,14 +20,13 @@
 
 (declare ws)
 (declare connect-to-presence)
+(declare hello!)
 
 
 (defn client-open-handler
   [event]
   (js/console.log "WS Client Connected:" event)
-  (.send (.-target event) (-> {:username @(rf/subscribe [:user])}
-                              clj->js
-                              js/JSON.stringify)))
+  (hello! @(rf/subscribe [:user])))
 
 
 (defn client-close-handler
@@ -52,16 +51,36 @@
       (.addEventListener "open" client-open-handler))))
 
 
+;; TODO: convert into fn, so we can trigger it when new WS configuration changes
 (def ws (atom (connect-to-presence ws-url)))
 
 
-(defn publish-editing
-  [username uid]
+(defn open?
+  [conn]
+  (and conn
+       (= (.-OPEN js/WebSocket) (.-readyState conn))))
+
+
+(defn hello!
+  [username]
+  (let [conn      @ws
+        hello-msg {:username username}]
+    (js/console.debug "presence/hello" username)
+    (if (open? conn)
+      (do
+        (js/console.debug "presence/hello sending")
+        (.send conn (-> hello-msg
+                        clj->js
+                        js/JSON.stringify)))
+      (js/console.warn "Can't send hello message, WS Closed"))))
+
+
+(defn publish-editing!
+  [uid]
   (let [conn     @ws
         pub-edit {:editing uid}]
     (js/console.log "publish-editing" uid conn)
-    (if (and conn
-             (= (.-OPEN js/WebSocket) (.-readyState conn)))
+    (if (open? conn)
 
       (do
         (js/console.log "sending")

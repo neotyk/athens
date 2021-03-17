@@ -99,6 +99,8 @@
   (style/init)
   (stylefy/tag "body" style/app-styles)
   (listeners/init)
+  ;; TODO why enabling this stops from syncing
+  ;; (rf/dispatch-sync [:boot/common])
   (if (util/electron?)
     (rf/dispatch-sync [:boot/desktop])
     (rf/dispatch-sync [:boot/web]))
