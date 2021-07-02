@@ -187,6 +187,54 @@
       sort-block-children))
 
 
+(defn uid-and-embed-id
+  [uid]
+  (or (some->> uid
+               (re-find #"^(.+)-embed-(.+)")
+               rest vec)
+      [uid nil]))
+
+
+(defn same-parent?
+  "Given a coll of uids, determine if uids are all direct children of the same parent."
+  [db uids]
+  (println "same parent")
+  (let [parents (->> uids
+                     (mapv (comp first uid-and-embed-id)) ;; TODO Check if this is needed?
+                     (d/q '[:find ?parents
+                            :in $ [?uids ...]
+                            :where
+                            [?e :block/uid ?uids]
+                            [?parents :block/children ?e]]
+                          db))]
+    (= (count parents) 1)))
+
+(defn minus-after
+  [db eid order x]
+  (->> (d/q '[:find ?ch ?new-o
+              :keys db/id block/order
+              :in $ % ?p ?at ?x
+              :where (minus-after ?p ?at ?ch ?new-o ?x)]
+            db
+            rules
+            eid
+            order
+            x)))
+
+
+(defn plus-after
+  [db eid order x]
+  (->> (d/q '[:find ?ch ?new-o
+              :keys db/id block/order
+              :in $ % ?p ?at ?x
+              :where (plus-after ?p ?at ?ch ?new-o ?x)]
+            db
+            rules
+            eid
+            order
+            x)))
+
+
 (defn- extract-tag-values
   "Extracts `tag` values with `extractor-fn` from parser AST."
   [ast tag extractor-fn]
@@ -201,6 +249,7 @@
   "Extracts from parser AST `:page-link`s"
   [ast]
   (extract-tag-values ast :page-link second))
+
 
 
 (defn linkmaker
