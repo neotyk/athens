@@ -23,7 +23,12 @@
    :datascript/paste-verbatim
    :datascript/indent
    :datascript/page-add-shortcut
-   :datascript/page-remove-shortcut])
+   :datascript/page-remove-shortcut
+   :datascript/drop-child
+   :datascript/drop-multi-child
+   :datascript/drop-link-child
+   :datascript/drop-diff-parent
+   :datascript/drop-link-diff-parent])
 
 
 (def event-common
@@ -147,6 +152,48 @@
    [:event/args
     [:map
      [:uid string?]]]])
+
+
+(def datascript-drop-child
+  [:map
+   [:event/args
+    [:map
+     [:source-uid string?
+      :target-uid string?]]]])
+
+
+(def datascript-drop-multi-child
+  [:map
+   [:event/args
+    [:map
+     [:source-uids vector?
+      :target-uid  string?]]]])
+
+
+(def datascript-drop-link-child
+  [:map
+   [:event/args
+    [:map
+     [:source-uid string?
+      :target-uid string?]]]])
+
+
+(def datascript-drop-diff-parent
+  [:map
+   [:event/args
+    [:map
+     [:drag-target keyword?
+      :source-uid  string?
+      :target-uid  string?]]]])
+
+
+(def datascript-drop-link-diff-parent
+  [:map
+   [:event/args
+    [:map
+     [:drag-target keyword?
+      :source-uid  string?
+      :target-uid  string?]]]])
 
 
 (def event
